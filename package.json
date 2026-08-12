@@ -1,0 +1,26 @@
+{
+  "name": "duo",
+  "version": "0.1.0",
+  "description": "Programmable rules for XRP payments on Flare",
+  "scripts": {
+    "build": "hardhat compile",
+    "test": "hardhat test",
+    "test:fork": "hardhat test test/fork/**/*.test.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@types/node": "^26.2.0",
+    "dotenv": "^17.4.2",
+    "hardhat": "^2.29.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@flarenetwork/flare-periphery-contracts": "^0.1.52",
+    "viem": "^2.55.13"
+  }
+}
