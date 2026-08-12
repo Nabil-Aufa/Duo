@@ -1,0 +1,48 @@
+# --- Rahasia: JANGAN PERNAH di-commit ---
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets.json
+
+# --- Perkakas agen AI & catatan internal ---
+.claude/
+.agents/
+.cursor/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+skills-lock.json
+
+# Dokumen strategi internal — repo ini PUBLIK, isi docs/ tidak untuk konsumsi juri
+docs/
+
+# --- Node ---
+node_modules/
+pnpm-debug.log*
+npm-debug.log*
+yarn-error.log*
+.pnpm-store/
+
+# --- Hardhat / Solidity ---
+artifacts/
+cache/
+typechain-types/
+coverage/
+coverage.json
+.openzeppelin/
+
+# --- Next.js / frontend ---
+.next/
+out/
+build/
+.vercel/
+next-env.d.ts
+
+# --- Editor & OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
