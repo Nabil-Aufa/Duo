@@ -29,6 +29,13 @@ interface IFirelightVault {
     function maxDeposit(address receiver) external view returns (uint256);
     function maxWithdraw(address owner) external view returns (uint256);
 
+    /// @notice Mengambil aset dari permintaan penarikan yang periodenya sudah berakhir.
+    /// @param period Periode saat permintaan penarikan dibuat.
+    /// @dev Langkah ketiga dan terakhir: withdraw/redeem membuat permintaan dan
+    ///      membakar share, periode berjalan harus berakhir dulu, baru aset bisa
+    ///      diambil lewat fungsi ini.
+    function claimWithdraw(uint256 period) external returns (uint256 assets);
+
     // --- Khusus Firelight: periode ---
     function currentPeriod() external view returns (uint256);
     function currentPeriodStart() external view returns (uint256);

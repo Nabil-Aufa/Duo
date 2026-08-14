@@ -1,0 +1,17 @@
+{
+  "network": "coston2",
+  "chainId": 114,
+  "deployedAt": "2026-08-14T10:33:29.348Z",
+  "deployer": "0x98a21cAbEcAc9Ec66Ba1121A75000E933Ead6bC3",
+  "contracts": {
+    "DuoVault": "0x996B1eC11212f3a10d103EB75B310F59b0fe6cf6",
+    "FtsoPricedSwap": "0x54Bc01D71Cf786260fED9E610ee69e80EB6F39EA",
+    "FtsoPriceReader": "0xFa39DCa0a8a3341c400BB670331b096dCb9C63e7"
+  },
+  "external": {
+    "FXRP": "0x0b6A3645c240605887a5532109323A3E12273dc7",
+    "USDT0": "0xC1A5B41512496B80903D1f32d6dEa3a73212E71F",
+    "FirelightVault": "0xC90D6847747b85d1fa2E07859869fb9fB72c0361"
+  },
+  "explorer": "https://coston2-explorer.flare.network/address/0x996B1eC11212f3a10d103EB75B310F59b0fe6cf6"
+}
