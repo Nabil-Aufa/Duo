@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+/*
+  Duo — bahasa visualnya kwitansi, bukan dasbor kripto.
+
+  Freelancer sudah kenal artefak ini: slip pembayaran dengan potongan, angka
+  rata di titik desimal, garis rangkap yang memisahkan pos. Itu yang dipinjam
+  di sini, bukan kartu-kartu bergradien.
+
+  Warnanya diambil dari kertas struk dan tinta stempel. Hijau buku kas untuk
+  porsi aman, sienna untuk tabungan yang tumbuh. Merah dipakai SEKALI saja,
+  untuk hal yang benar-benar perlu diperhatikan.
+*/
+
+:root {
+  --paper: #f7f6f1;
+  --paper-edge: #eceade;
+  --ink: #1a1714;
+  --ink-soft: #6b6459;
+  --ink-faint: #a09889;
+  --rule: #d6d1c2;
+  --secured: #1d5c46;
+  --saving: #8a4a1c;
+  --stamp: #a8261d;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #14120f;
+    --paper-edge: #1d1a16;
+    --ink: #f2efe7;
+    --ink-soft: #9e968a;
+    --ink-faint: #6a6358;
+    --rule: #322d26;
+    --secured: #6fc3a0;
+    --saving: #d9924f;
+    --stamp: #e0685e;
+  }
+}
+
+html {
+  background: var(--paper-edge);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-feature-settings: "tnum" 1, "zero" 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Garis kwitansi: rangkap memisahkan pos utama, tunggal memisahkan baris. */
+.rule-double {
+  border-top: 3px double var(--rule);
+}
+.rule-single {
+  border-top: 1px solid var(--rule);
+}
+
+/* Angka besar yang jadi tanda tangan halaman ini. */
+.figure {
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(2.25rem, 8vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-weight: 600;
+}
+
+.label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* Tepi bergerigi seperti kertas struk yang disobek. */
+.torn {
+  --tooth: 9px;
+  mask-image: radial-gradient(var(--tooth) at 50% 0, transparent 98%, #000 100%);
+  mask-size: calc(var(--tooth) * 2) var(--tooth);
+  mask-repeat: repeat-x;
+  mask-position: 0 0;
+  height: var(--tooth);
+  background: var(--paper);
+}
+
+input {
+  font-family: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
