@@ -21,7 +21,9 @@
   },
   "dependencies": {
     "@flarenetwork/flare-periphery-contracts": "^0.1.52",
+    "@flarenetwork/smart-accounts-encoder": "^0.1.2",
     "@openzeppelin/contracts": "^5.6.1",
-    "viem": "^2.55.13"
+    "viem": "^2.55.13",
+    "xrpl": "^5.0.0"
   }
 }

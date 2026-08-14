@@ -39,10 +39,18 @@ if (xrplAddress) {
   const res = await fetch("https://faucet.altnet.rippletest.net/accounts", { method: "POST" });
   if (!res.ok) throw new Error(`Faucet XRPL gagal: HTTP ${res.status}`);
   const data = await res.json();
+  // Seed ada di `data.seed`, BUKAN `data.account.secret`. Versi awal skrip ini
+  // memakai jalur yang salah dan menyimpan "undefined", membuat dompetnya tidak
+  // bisa dipakai — dan FXRP yang terlanjur dikirim ke personal account-nya
+  // hilang permanen. Validasi di bawah mencegah itu terulang.
   xrplAddress = data.account.address;
+  const seed = data.seed;
+  if (typeof seed !== "string" || !seed.startsWith("s") || seed.length < 25) {
+    throw new Error(`Faucet XRPL mengembalikan seed tidak valid (panjang ${seed?.length})`);
+  }
   env = upsert(env, "XRPL_ACCOUNT_ADDRESS", xrplAddress);
-  env = upsert(env, "XRPL_ACCOUNT_SECRET", data.account.secret);
-  console.log(`Akun XRPL dibuat, saldo awal ${data.balance} XRP testnet.`);
+  env = upsert(env, "XRPL_ACCOUNT_SECRET", seed);
+  console.log(`Akun XRPL dibuat, saldo awal ${data.amount} XRP testnet.`);
 }
 
 writeFileSync(ENV, env);
