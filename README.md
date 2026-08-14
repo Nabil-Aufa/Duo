@@ -150,7 +150,24 @@ tolerance is capped at 5%.
 fresh but absurd price. Values outside $0.01–$100 are now rejected — a wide band,
 guarding against breakage rather than market moves.
 
-Each has a test. Still unaudited; still testnet only.
+Each has a test.
+
+**One gap we found and chose not to close, with the reasoning.** The Firelight
+deposit does not specify a minimum number of shares to accept. Standard practice
+is to state a floor and revert below it, so an adverse rate move between reading
+a price and depositing cannot quietly shortchange the user.
+
+We left it. Firelight's exchange rate is monotonic — it only rises as yield
+accrues, and after eight months on mainnet it has moved from 1.000000 to
+1.000072. There is no path by which a depositor receives less than expected, so
+the realistic loss is nil. Closing it would mean redeploying and re-running the
+end-to-end demo, which would leave the transactions linked above pointing at a
+superseded contract. That trade did not look worth making for a risk that does
+not exist in practice.
+
+It should be added before mainnet, where the calculus changes.
+
+Still unaudited; still testnet only.
 
 ## The swap venue, stated plainly
 
