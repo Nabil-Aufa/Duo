@@ -1,92 +1,94 @@
 @import "tailwindcss";
 
 /*
-  Duo — bahasa visualnya kwitansi, bukan dasbor kripto.
+  Duo — sistem visual.
 
-  Freelancer sudah kenal artefak ini: slip pembayaran dengan potongan, angka
-  rata di titik desimal, garis rangkap yang memisahkan pos. Itu yang dipinjam
-  di sini, bukan kartu-kartu bergradien.
+  Struktur dipinjam dari Superfluid: bagian gelap dan terang bergantian, pill
+  kecil sebagai penanda bagian, kotak sorot di dalam kalimat, tombol pil.
+  Warnanya tidak dipinjam — hijau itu identitas mereka.
 
-  Warnanya diambil dari kertas struk dan tinta stempel. Hijau buku kas untuk
-  porsi aman, sienna untuk tabungan yang tumbuh. Merah dipakai SEKALI saja,
-  untuk hal yang benar-benar perlu diperhatikan.
+  Dua warna aksen kita menandai dua amplop, dan artinya tidak pernah berubah
+  di seluruh situs:
+      biru sejuk  = porsi aman, nilainya diam
+      amber       = porsi tabungan, nilainya tumbuh
 */
 
+@theme {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+
 :root {
-  --paper: #f7f6f1;
-  --paper-edge: #eceade;
-  --ink: #1a1714;
-  --ink-soft: #6b6459;
-  --ink-faint: #a09889;
-  --rule: #d6d1c2;
-  --secured: #1d5c46;
-  --saving: #8a4a1c;
-  --stamp: #a8261d;
-}
+  /* Dasar */
+  --ink: #0b0f14;
+  --ink-soft: #131a22;
+  --paper: #ffffff;
+  --paper-soft: #f3f5f4;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: #14120f;
-    --paper-edge: #1d1a16;
-    --ink: #f2efe7;
-    --ink-soft: #9e968a;
-    --ink-faint: #6a6358;
-    --rule: #322d26;
-    --secured: #6fc3a0;
-    --saving: #d9924f;
-    --stamp: #e0685e;
-  }
-}
+  /* Teks di atas terang */
+  --on-light: #0b0f14;
+  --on-light-soft: #5a6672;
+  --on-light-faint: #8d97a1;
 
-html {
-  background: var(--paper-edge);
+  /* Teks di atas gelap */
+  --on-dark: #f4f7fa;
+  --on-dark-soft: #9aa7b4;
+  --on-dark-faint: #5d6a77;
+
+  /* Aksen — arti tetap di mana pun */
+  --stable: #7dd3fc;
+  --stable-ink: #0369a1;
+  --grow: #fbbf24;
+  --grow-ink: #a16207;
+
+  --line-light: #e3e7e6;
+  --line-dark: #1f2933;
 }
 
 body {
   background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-feature-settings: "tnum" 1, "zero" 1;
+  color: var(--on-light);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
-/* Garis kwitansi: rangkap memisahkan pos utama, tunggal memisahkan baris. */
-.rule-double {
-  border-top: 3px double var(--rule);
-}
-.rule-single {
-  border-top: 1px solid var(--rule);
-}
-
-/* Angka besar yang jadi tanda tangan halaman ini. */
-.figure {
+/* Angka selalu tabular supaya kolom desimal sejajar — satu-satunya alasan
+   kita masih peduli soal lebar digit setelah monospace dibuang. */
+.tnum {
   font-variant-numeric: tabular-nums;
-  font-size: clamp(2.25rem, 8vw, 4rem);
-  line-height: 1;
-  letter-spacing: -0.03em;
-  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
-.label {
-  font-size: 0.6875rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
+/* Alamat kontrak: tanpa monospace, jadi diberi sedikit jarak huruf supaya
+   tetap terbaca karakter per karakter. */
+.addr {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
 }
 
-/* Tepi bergerigi seperti kertas struk yang disobek. */
-.torn {
-  --tooth: 9px;
-  mask-image: radial-gradient(var(--tooth) at 50% 0, transparent 98%, #000 100%);
-  mask-size: calc(var(--tooth) * 2) var(--tooth);
-  mask-repeat: repeat-x;
-  mask-position: 0 0;
-  height: var(--tooth);
-  background: var(--paper);
+/* Aliran di hero. Garis putus yang bergerak sepanjang jalur, meniru cairan
+   yang mengalir tanpa perlu render 3D. */
+@keyframes flow {
+  to {
+    stroke-dashoffset: -1000;
+  }
+}
+.flowing {
+  stroke-dasharray: 10 14;
+  animation: flow 24s linear infinite;
 }
 
-input {
-  font-family: inherit;
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -94,6 +96,12 @@ input {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+::selection {
+  background: var(--grow);
+  color: var(--ink);
 }

@@ -1,23 +1,17 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const mono = IBM_Plex_Mono({
-  variable: "--font-mono",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const sans = IBM_Plex_Sans({
-  variable: "--font-sans",
-  subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
   title: "Duo — aturan untuk pembayaran XRP",
   description:
-    "Pembayaran XRP masuk, kebutuhan hidup langsung diamankan, sisanya menabung sendiri. Dibangun di Flare.",
+    "Satu pembayaran XRP. Kebutuhanmu langsung diamankan, sisanya menabung sendiri. Tanpa dompet baru, tanpa memasang apa pun.",
 };
 
 export default function RootLayout({
@@ -25,7 +19,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="id">
-      <body className={`${mono.variable} ${sans.variable}`}>{children}</body>
+      <body className={jakarta.variable}>{children}</body>
     </html>
   );
 }
