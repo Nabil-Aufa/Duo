@@ -39,6 +39,18 @@ contract DuoVault is Ownable, Pausable, ReentrancyGuard {
 
     ISwapAdapter public swapAdapter;
 
+    /// @notice Adapter yang diajukan, menunggu masa tunggu berakhir.
+    ISwapAdapter public pendingSwapAdapter;
+    /// @notice Waktu paling awal adapter yang diajukan boleh diberlakukan.
+    uint256 public pendingSwapAdapterAt;
+
+    /// @notice Masa tunggu sebelum penggantian venue swap berlaku.
+    /// @dev Dana pengguna melewati adapter saat ditukar. Tanpa jeda, pemilik
+    ///      bisa mengarahkannya ke kontrak jahat dalam satu transaksi — dan
+    ///      "non-kustodial" jadi tidak ada artinya kalau tujuannya bisa diganti
+    ///      seketika. Jeda ini memberi pengguna waktu untuk keluar lebih dulu.
+    uint256 public constant SWAP_ADAPTER_TIMELOCK = 2 days;
+
     /// @notice Target kebutuhan tiap pengguna, dalam USD dengan 6 desimal.
     /// @dev Nol berarti "tabung semuanya" — pilihan bawaan yang sah.
     mapping(address => uint256) public targetOf;
@@ -61,6 +73,8 @@ contract DuoVault is Ownable, Pausable, ReentrancyGuard {
         uint256 sharesReceived,
         uint256 priceUsed
     );
+    event SwapAdapterProposed(address newAdapter, uint256 effectiveAt);
+    event SwapAdapterProposalCancelled(address cancelledAdapter);
     event SwapAdapterUpdated(address oldAdapter, address newAdapter);
     event SlippageToleranceUpdated(uint256 oldBps, uint256 newBps);
 
@@ -68,6 +82,8 @@ contract DuoVault is Ownable, Pausable, ReentrancyGuard {
     error TargetTooHigh(uint256 requested, uint256 max);
     error ResidualBalance(address token, uint256 amount);
     error InvalidAddress();
+    error NoPendingAdapter();
+    error TimelockNotElapsed(uint256 nowTs, uint256 effectiveAt);
 
     constructor(
         IERC20 _fxrp,
@@ -108,6 +124,12 @@ contract DuoVault is Ownable, Pausable, ReentrancyGuard {
     function split() external nonReentrant whenNotPaused {
         address user = msg.sender;
 
+        // Dicatat SEBELUM dana ditarik. Pemeriksaan di akhir membandingkan
+        // terhadap angka ini, bukan terhadap nol — lihat `_assertNoResidual`.
+        uint256 fxrpBefore = fxrp.balanceOf(address(this));
+        uint256 stableBefore = stable.balanceOf(address(this));
+        uint256 sharesBefore = firelight.balanceOf(address(this));
+
         uint256 amountIn = fxrp.balanceOf(user);
         if (amountIn == 0) revert NothingToSplit();
 
@@ -132,7 +154,7 @@ contract DuoVault is Ownable, Pausable, ReentrancyGuard {
 
         emit Split(user, amountIn, toStable, toSavings, stableReceived, sharesReceived, price);
 
-        _assertNoResidual();
+        _assertNoResidual(fxrpBefore, stableBefore, sharesBefore);
     }
 
     function _swapToStable(
@@ -166,30 +188,68 @@ contract DuoVault is Ownable, Pausable, ReentrancyGuard {
         fxrp.forceApprove(address(firelight), 0);
     }
 
-    /// @dev Penegakan janji non-kustodial. Kalau ada token pengguna yang tertinggal,
-    ///      seluruh transaksi dibatalkan — lebih baik gagal keras daripada diam-diam
-    ///      menahan dana orang.
-    function _assertNoResidual() private view {
+    /// @dev Penegakan janji non-kustodial: apa pun yang masuk lewat transaksi ini
+    ///      harus keluar lagi di transaksi yang sama.
+    ///
+    ///      Pembandingnya adalah saldo AWAL, bukan nol. Versi sebelumnya menuntut
+    ///      saldo persis nol, dan itu bisa disalahgunakan: siapa pun cukup
+    ///      mengirim satu unit token ke kontrak ini untuk membuat `split()` milik
+    ///      SEMUA orang gagal selamanya. Dengan membandingkan terhadap saldo awal,
+    ///      debu kiriman orang lain tidak berpengaruh, sementara jaminannya tetap
+    ///      sama kuat — tidak ada dana pengguna yang boleh mengendap di sini.
+    function _assertNoResidual(
+        uint256 fxrpBefore,
+        uint256 stableBefore,
+        uint256 sharesBefore
+    ) private view {
         uint256 fxrpLeft = fxrp.balanceOf(address(this));
-        if (fxrpLeft != 0) revert ResidualBalance(address(fxrp), fxrpLeft);
+        if (fxrpLeft > fxrpBefore) revert ResidualBalance(address(fxrp), fxrpLeft - fxrpBefore);
 
         uint256 stableLeft = stable.balanceOf(address(this));
-        if (stableLeft != 0) revert ResidualBalance(address(stable), stableLeft);
+        if (stableLeft > stableBefore) revert ResidualBalance(address(stable), stableLeft - stableBefore);
 
         uint256 sharesLeft = firelight.balanceOf(address(this));
-        if (sharesLeft != 0) revert ResidualBalance(address(firelight), sharesLeft);
+        if (sharesLeft > sharesBefore) revert ResidualBalance(address(firelight), sharesLeft - sharesBefore);
     }
 
     // --- Administrasi ---
 
-    function setSwapAdapter(ISwapAdapter newAdapter) external onlyOwner {
+    /// @notice Mengajukan venue swap baru. Baru berlaku setelah masa tunggu.
+    function proposeSwapAdapter(ISwapAdapter newAdapter) external onlyOwner {
         if (address(newAdapter) == address(0)) revert InvalidAddress();
-        emit SwapAdapterUpdated(address(swapAdapter), address(newAdapter));
-        swapAdapter = newAdapter;
+        pendingSwapAdapter = newAdapter;
+        pendingSwapAdapterAt = block.timestamp + SWAP_ADAPTER_TIMELOCK;
+        emit SwapAdapterProposed(address(newAdapter), pendingSwapAdapterAt);
     }
 
+    /// @notice Membatalkan pengajuan yang belum berlaku.
+    function cancelSwapAdapterProposal() external onlyOwner {
+        if (address(pendingSwapAdapter) == address(0)) revert NoPendingAdapter();
+        emit SwapAdapterProposalCancelled(address(pendingSwapAdapter));
+        pendingSwapAdapter = ISwapAdapter(address(0));
+        pendingSwapAdapterAt = 0;
+    }
+
+    /// @notice Memberlakukan venue swap yang sudah melewati masa tunggu.
+    /// @dev Sengaja bisa dipanggil siapa saja: begitu masa tunggu lewat,
+    ///      perubahannya sudah publik dan tidak ada gunanya dibatasi.
+    function applySwapAdapter() external {
+        if (address(pendingSwapAdapter) == address(0)) revert NoPendingAdapter();
+        if (block.timestamp < pendingSwapAdapterAt) {
+            revert TimelockNotElapsed(block.timestamp, pendingSwapAdapterAt);
+        }
+        emit SwapAdapterUpdated(address(swapAdapter), address(pendingSwapAdapter));
+        swapAdapter = pendingSwapAdapter;
+        pendingSwapAdapter = ISwapAdapter(address(0));
+        pendingSwapAdapterAt = 0;
+    }
+
+    /// @notice Batas toleransi selisih hasil swap.
+    /// @dev Dibatasi 5%. Toleransi yang longgar plus venue yang bisa diganti
+    ///      adalah dua bahan yang, kalau digabung, memungkinkan penggerusan
+    ///      diam-diam. Masa tunggu di atas menangani bahan yang satunya.
     function setSlippageToleranceBps(uint256 newBps) external onlyOwner {
-        require(newBps <= 1_000, "toleransi maks 10%");
+        require(newBps <= 500, "toleransi maks 5%");
         emit SlippageToleranceUpdated(slippageToleranceBps, newBps);
         slippageToleranceBps = newBps;
     }

@@ -24,9 +24,18 @@ contract FtsoPriceReader {
     ///      menyaring fluktuasi normal.
     uint64 public constant MAX_PRICE_AGE = 300;
 
+    /// @notice Batas kewajaran harga XRP/USD, dinormalkan ke 6 desimal.
+    /// @dev Memeriksa umur data saja tidak cukup: oracle yang rusak bisa
+    ///      mengembalikan angka segar tapi ngawur, dan pembagian ikut ngawur
+    ///      tanpa ada yang menahan. Batasnya sengaja sangat longgar — ini
+    ///      penjaga terhadap kerusakan, bukan terhadap pergerakan pasar.
+    uint256 public constant MIN_XRP_USD = 0.01e6; // $0,01
+    uint256 public constant MAX_XRP_USD = 100e6; // $100
+
     error StalePrice(uint64 priceTimestamp, uint64 nowTimestamp, uint64 maxAge);
     error InvalidPrice();
     error NegativeDecimals(int8 decimals);
+    error PriceOutOfBounds(uint256 normalizedPrice, uint256 min, uint256 max);
 
     /// @notice Harga XRP/USD terkini.
     /// @return price    Nilai harga sebagai integer.
@@ -45,6 +54,15 @@ contract FtsoPriceReader {
             revert StalePrice(timestamp, nowTs, MAX_PRICE_AGE);
         }
 
-        return (value, uint8(int8(dec)));
+        decimals = uint8(int8(dec));
+
+        uint256 normalized = decimals >= 6
+            ? value / (10 ** (uint256(decimals) - 6))
+            : value * (10 ** (6 - uint256(decimals)));
+        if (normalized < MIN_XRP_USD || normalized > MAX_XRP_USD) {
+            revert PriceOutOfBounds(normalized, MIN_XRP_USD, MAX_XRP_USD);
+        }
+
+        return (value, decimals);
     }
 }
